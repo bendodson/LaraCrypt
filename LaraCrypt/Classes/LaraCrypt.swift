@@ -236,6 +236,51 @@ public class LaraCrypt: NSObject {
         return decrypted
     }
     
+    public func decryptData(Message message:String,Key key:String) -> Data {
+
+        if message.count == 0 { return Data() }
+        //Preparing initial data
+        let keyData:Data = Data(base64Encoded: key)!
+
+        var combineDict: [String: String] = [:]
+        autoreleasepool {
+            if let data = NSData(base64Encoded: message, options:.ignoreUnknownCharacters) {
+                var messageDecodedString = NSString(data: data as Data, encoding: String.Encoding.utf8.rawValue)
+               // let messageDecodedString = NSString(data: messageDecodedData! as Data, encoding: String.Encoding.utf8.rawValue)
+
+                //Combinig base64 iv with base64 encrypted data and Hmac
+                combineDict = convertToDictionary(text: NSString(data: NSData(base64Encoded: message, options:.ignoreUnknownCharacters)! as Data, encoding: String.Encoding.utf8.rawValue)! as String)!
+                messageDecodedString = nil
+            }
+        }
+        if combineDict.values.count == 0 { return Data() }
+        //IV
+        let ivStr:String = combineDict["iv"]!
+        let ivData:Data = Data(base64Encoded: ivStr)!
+
+        //Value
+        let valueData:Data = Data(base64Encoded:combineDict["value"]!)!
+      //  let valueData:Data =  Data(base64Encoded: value)!
+
+        //Decrypting data
+        let decData = AES256CBC(data: valueData, keyData: keyData, ivData: ivData, operation: kCCDecrypt)
+
+        //Decrypted UInt8
+        let decDataUInt8:Array<UInt8> = DATA_TO_UINT8(decData)
+
+        //Decrypted Data
+        let decAsData = NSData(bytes: decDataUInt8 as [UInt8], length: decDataUInt8.count)
+//
+//        //Serialized Decrypted Message
+//        let deceSrializedString:String = String(data: decAsData as Data, encoding: String.Encoding.utf8)!
+//
+//        //Unserialized Decrypted Message
+//        let decrypted:String = stringUnserilizer(String: deceSrializedString)
+
+
+        return decAsData as Data
+    }
+    
     
     
     
